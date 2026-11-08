@@ -1,0 +1,109 @@
+# Airflow prometheus exporter
+
+Exposes dag and task based metrics from Airflow to a Prometheus compatible endpoint.
+
+## Compatibility with Airflow versions
+
+### 3.*
+
+Versions `>=2.0.0` will support only Airflow 3.0+
+
+### 2.*
+
+Versions `>=1.7.0,<2` are compatible with Airflow 2.*
+
+Development of Airflow 2 compatible version happens from `airflow-2` branch
+
+## Install
+
+```sh
+pip install airflow-exporter
+```
+
+That's it. You're done.
+
+## Exporting extra labels to Prometheus
+
+It is possible to add extra labels to DAG-related metrics by providing `labels`
+dict to DAG `params`.
+
+### Example
+
+```python
+dag = DAG(
+    'dummy_dag',
+    schedule_interval=timedelta(hours=5),
+    default_args=default_args,
+    catchup=False,
+    params={
+        'labels': {
+            'env': 'test'
+        }
+    }
+)
+```
+
+Label `env` with value `test` will be added to all metrics related to
+`dummy_dag`:
+
+```
+airflow_dag_status{dag_id="dummy_dag",env="test",owner="owner",status="running"} 12.0
+```
+
+## Metrics
+
+Metrics will be available at 
+
+```
+http://<your_airflow_host_and_port>/admin/metrics/
+```
+
+### `airflow_task_status`
+
+Labels:
+
+* `dag_id`
+* `task_id`
+* `owner`
+* `status`
+
+Value: number of tasks in a specific status.
+
+### `airflow_dag_status`
+
+Labels:
+
+* `dag_id`
+* `owner`
+* `status`
+* `paused`
+
+Value: number of dags in a specific status.
+
+### `airflow_dag_run_duration`
+
+Labels:
+
+* `dag_id`: unique identifier for a given DAG
+
+Value: duration in seconds of the longest DAG Run for given DAG. This metric 
+is not available for DAGs that have already finished.
+
+### `airflow_dag_last_status`
+
+Labels:
+
+* `dag_id`
+* `owner`
+* `status`
+* `paused`
+
+Value: 0 or 1 depending on wherever the current state of each `dag_id` is `status`.
+
+The "last" DAG run is the one with the most recent `updated_at` (not
+`logical_date`, which is `NULL` for manually triggered runs).
+
+## License
+
+Distributed under the MIT license. See [LICENSE](LICENSE) for more
+information.
